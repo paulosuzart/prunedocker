@@ -26,37 +26,45 @@
          [token (hash-ref (read-json in) 'token)])
     token))
 
-(define (fetch-tags user repo token page)
-  (let* ([uri (string->url (format "https://hub.docker.com/v2/repositories/~a/~a/tags/?page=~a" user repo page))]
+(define (fetch-tags user repo token page-url)
+  (let* ([uri (string->url page-url)]
          [in (get-pure-port uri (with-auth-header token))]
          [tags-result (read-json in)])
-    (displayln (format "https://hub.docker.com/v2/repositories/~a/~a/tags/page=~a" user repo page))
+    (displayln page-url)
     tags-result))
 
 (define (delete-tag user repo tag token)
   (let* ([uri (string->url (format "https://hub.docker.com/v2/repositories/~a/~a/tags/~a/" user repo tag))]
          [in (delete-pure-port uri (with-auth-header token))]
          [delete-result (read-json in)])
-  delete-result))
+    delete-result))
  
 
 (define tags
   (case-lambda
-    [(user repo token) (tags user repo token 1)]
+    [(user repo token) (tags user repo token (format "https://hub.docker.com/v2/repositories/~a/~a/tags/" user repo))]
     [(user repo token page)
-     (let ([tag-result (fetch-tags user repo token page)])
-       (displayln page)
-       (stream-append (hash-ref tag-result 'results)
-                      (if (equal? (hash-ref tag-result 'next) 'null)
-                          empty-stream
-                          (stream-cons empty-stream (tags user repo token (add1 page))))))]))
+     (if (equal? 'null page)
+         empty-stream
+         (let* ([tag-result (fetch-tags user repo token page)]
+                [results (hash-ref tag-result 'results)])
+           (stream-cons (first results) 
+                          (stream-append
+                            (rest results)
+                            (tags user repo token (hash-ref tag-result 'next))))))]))
 
-(define (prune user repo tags-stream token)
+(define (prune user repo tags-stream keep token)
+  (define tags-to-delete 
+    (for/stream ([tag tags-stream]
+                 [index (in-naturals 1)]
+                 #:when (> index keep))
+      tag))
   (stream-for-each
    (λ [tag]
      (displayln (format "Prunning tag ~a" (hash-ref tag 'name)))
      (delete-tag user repo (hash-ref tag 'name) token))
-   tags-stream))
+   tags-to-delete))
+            
 
 (define main
   (command-line
@@ -72,17 +80,16 @@
                     (keep (string->number k))]))
 
 (when (or (equal? "" (username))
-        (equal? "" (password))
-        (equal? "" (repository))
-        (equal? -1 (keep)))
+          (equal? "" (password))
+          (equal? "" (repository))
+          (equal? -1 (keep)))
   (display "Please run: racket prunedocker.rkt --help to see the available run options")
   (exit 1))
     
 
 (let* ([token (authenticate (username) (password))]
        [tags-stream (tags (username) (repository) token)])
-  (when (< (keep) (stream-length tags-stream))
-    (prune (username) (repository) (stream-tail tags-stream (keep)) token)))
+  (prune (username) (repository) (stream->list tags-stream) (keep) token))
 
 
 
