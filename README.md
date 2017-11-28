@@ -9,10 +9,10 @@ You can either grab the code in the [repository](https://github.com/paulosuzart/
 `racket prunedocker.rkt --help` and a message like this should be displayed:
 
 ```
-Prune Docker Hub [ <option> ... ]
+Prune DockerHub [ <option> ... ]
  where <option> is one of
   -u <u>, --user <u> : Dockerhub Login
-  -p <p>, --passowrd <p> : Dockerhub password
+  -p <p>, --password <p> : DockerHub password
   -r <r>, --repo <r> : Dockerhub repository
   -k <k>, --keep <k> : Keeps k tags in the repo. Will delete the remaining older tags
   --help, -h : Show this help

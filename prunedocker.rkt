@@ -45,25 +45,26 @@
     [(user repo token) (tags user repo token 1)]
     [(user repo token page)
      (let ([tag-result (fetch-tags user repo token page)])
+       (displayln page)
        (stream-append (hash-ref tag-result 'results)
                       (if (equal? (hash-ref tag-result 'next) 'null)
                           empty-stream
-                          (tags user repo token (add1 page)))))]))
+                          (stream-cons empty-stream (tags user repo token (add1 page))))))]))
 
-(define (prune user repo tag-names token)
+(define (prune user repo tags-stream token)
   (stream-for-each
-   (λ [name]
-     (displayln (format "Prunning tag ~a" name))
-     (delete-tag user repo name token))
-   tag-names))
+   (λ [tag]
+     (displayln (format "Prunning tag ~a" (hash-ref tag 'name)))
+     (delete-tag user repo (hash-ref tag 'name) token))
+   tags-stream))
 
 (define main
   (command-line
-   #:program "Prune Docker Hub"
+   #:program "Prune DockerHub"
    #:once-each
    [("-u" "--user") u "Dockerhub Login"
                     (username u)]
-   [("-p" "--passowrd") p "Dockerhub password"
+   [("-p" "--password") p "DockerHub password"
                         (password p)]
    [("-r" "--repo") r "Dockerhub repository"
                     (repository r)]
@@ -79,10 +80,9 @@
     
 
 (let* ([token (authenticate (username) (password))]
-       [tags-stream (tags (username) (repository) token)]
-       [tag-names (stream-map (λ [t] (hash-ref t 'name)) tags-stream)])
-  (when (< (keep) (stream-length tag-names))
-    (prune (username) (repository) (stream-tail tag-names (keep)) token)))
+       [tags-stream (tags (username) (repository) token)])
+  (when (< (keep) (stream-length tags-stream))
+    (prune (username) (repository) (stream-tail tags-stream (keep)) token)))
 
 
 
