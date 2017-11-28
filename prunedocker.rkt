@@ -18,7 +18,7 @@
 
 (define (with-auth-header token)
   (append base-headers (auth-header token)))
-  
+
 (define (authenticate user pass)
   (let* ([uri (string->url "https://hub.docker.com/v2/users/login")]
          [auth-payload (hasheq 'username user 'password pass)]
@@ -67,13 +67,14 @@
                         (password p)]
    [("-r" "--repo") r "Dockerhub repository"
                     (repository r)]
-   [("-k" "--keep") k "Keeps k tags in the repo. Will delete the remining older tags"
+   [("-k" "--keep") k "Keeps k tags in the repo. Will delete the remaining older tags"
                     (keep (string->number k))]))
 
 (when (or (equal? "" (username))
         (equal? "" (password))
         (equal? "" (repository))
         (equal? -1 (keep)))
+  (display "Please run: racket prunedocker.rkt --help to see the available run options")
   (exit 1))
     
 

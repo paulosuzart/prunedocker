@@ -14,14 +14,17 @@ Prune Docker Hub [ <option> ... ]
   -u <u>, --user <u> : Dockerhub Login
   -p <p>, --passowrd <p> : Dockerhub password
   -r <r>, --repo <r> : Dockerhub repository
-  -k <k>, --keep <k> : Keeps k tags in the repo. Will delete the remining older tags
+  -k <k>, --keep <k> : Keeps k tags in the repo. Will delete the remaining older tags
   --help, -h : Show this help
   -- : Do not treat any remaining argument as a switch (at this level)
  Multiple single-letter switches can be combined after one `-'; for
   example: `-h-' is the same as `-h --'
 ```
 
-You can then simply run: `racket prunedocker.rkt -u youruser -p yourpass -r a_repo -k 20`. Or for a convinient run wihtouth having to setup Racket or generate a full executable, just use this docker image like this:
+You can then simply run: 
+`racket prunedocker.rkt -u youruser -p yourpass -r a_repo -k 20`
+
+Or for a convinient run wihtouth having to setup Racket or generate a full executable, just use this docker image like this:
 
 `docker run paulosuzart/prunedocker -u youruser -p yourpass -r a_repo -k 20`
 
