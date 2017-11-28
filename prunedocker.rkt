@@ -10,6 +10,7 @@
 (define password (make-parameter ""))
 (define repository (make-parameter ""))
 (define keep (make-parameter -1))
+(define dry (make-parameter #f))
 
 (define base-headers (list "Content-Type: application/json"))
 
@@ -53,16 +54,17 @@
                             (rest results)
                             (tags user repo token (hash-ref tag-result 'next))))))]))
 
-(define (prune user repo tags-stream keep token)
+(define (prune user repo tags-stream keep token dry)
   (define tags-to-delete 
-    (for/stream ([tag tags-stream]
+    (for/stream ([tag (or (and dry tags-stream)
+                          (stream->list tags-stream))]
                  [index (in-naturals 1)]
                  #:when (> index keep))
       tag))
   (stream-for-each
    (λ [tag]
      (displayln (format "Prunning tag ~a" (hash-ref tag 'name)))
-     (delete-tag user repo (hash-ref tag 'name) token))
+     (and (not dry) (delete-tag user repo (hash-ref tag 'name) token)))
    tags-to-delete))
             
 
@@ -77,7 +79,9 @@
    [("-r" "--repo") r "Dockerhub repository"
                     (repository r)]
    [("-k" "--keep") k "Keeps k tags in the repo. Will delete the remaining older tags"
-                    (keep (string->number k))]))
+                    (keep (string->number k))]
+   [("--dry-run") "Just lists tags that will be dropped without actually dropping them"
+                  (dry #t)]))
 
 (when (or (equal? "" (username))
           (equal? "" (password))
@@ -86,10 +90,12 @@
   (display "Please run: racket prunedocker.rkt --help to see the available run options")
   (exit 1))
     
+(when (dry)
+  (displayln "**RUNNING IN DRY RUN MODE - NOT TAGS WILL BE DELETE**"))
 
 (let* ([token (authenticate (username) (password))]
        [tags-stream (tags (username) (repository) token)])
-  (prune (username) (repository) (stream->list tags-stream) (keep) token))
+  (prune (username) (repository) tags-stream (keep) token (dry)))
 
 
 

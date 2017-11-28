@@ -15,6 +15,7 @@ Prune DockerHub [ <option> ... ]
   -p <p>, --password <p> : DockerHub password
   -r <r>, --repo <r> : Dockerhub repository
   -k <k>, --keep <k> : Keeps k tags in the repo. Will delete the remaining older tags
+  --dry-run : Just lists tags that will be dropped without actually dropping them
   --help, -h : Show this help
   -- : Do not treat any remaining argument as a switch (at this level)
  Multiple single-letter switches can be combined after one `-'; for
